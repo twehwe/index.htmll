@@ -1,0 +1,2537 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <title>EcoPlanet — Serious Game Prototype</title>
+  <meta name="description" content="EcoPlanet: an educational strategy game prototype about sustainability, conservation, and eco-friendly decision making."/>
+  <style>
+    :root{
+      --bg1:#0b1b3a;
+      --bg2:#1a6b6e;
+      --card: rgba(255,255,255,.10);
+      --card2: rgba(255,255,255,.14);
+      --stroke: rgba(255,255,255,.16);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.70);
+      --good: #5DFFAE;
+      --warn: #FFD15D;
+      --bad:  #FF6B6B;
+      --accent:#7CEBFF;
+      --accent2:#B6FF6D;
+      --shadow: 0 18px 60px rgba(0,0,0,.35);
+      --radius: 22px;
+      --fontScale: 1;
+      --focus: 0 0 0 4px rgba(124,235,255,.30);
+    }
+
+    html,body{height:100%;}
+    body{
+      margin:0;
+      font-family: ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background: radial-gradient(1200px 700px at 20% 10%, rgba(124,235,255,.25), transparent 60%),
+                  radial-gradient(900px 700px at 90% 15%, rgba(182,255,109,.20), transparent 55%),
+                  linear-gradient(160deg, var(--bg1), var(--bg2));
+      overflow-x:hidden;
+      font-size: calc(16px * var(--fontScale));
+    }
+
+    /* subtle animated "bubbles"/particles */
+    .sky{
+      position:fixed; inset:0; pointer-events:none; overflow:hidden;
+      opacity:.9;
+    }
+    .bubble{
+      position:absolute;
+      width: 10px; height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.12);
+      filter: blur(.2px);
+      animation: floatUp linear infinite;
+    }
+    @keyframes floatUp{
+      from{ transform: translateY(110vh) translateX(0) scale(.8); opacity:0; }
+      10%{ opacity:.8; }
+      to{ transform: translateY(-15vh) translateX(40px) scale(1.2); opacity:0; }
+    }
+
+    /* layout */
+    .wrap{
+      min-height:100%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding: 24px;
+      gap: 18px;
+    }
+
+    .app{
+      width:min(1040px, 100%);
+      display:grid;
+      grid-template-rows: auto 1fr;
+      gap: 14px;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.08));
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      user-select:none;
+    }
+    .logo{
+      width:44px; height:44px; border-radius: 14px;
+      background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.95), rgba(255,255,255,.0) 55%),
+                  radial-gradient(circle at 60% 70%, rgba(182,255,109,.9), rgba(182,255,109,0) 55%),
+                  radial-gradient(circle at 30% 80%, rgba(124,235,255,.9), rgba(124,235,255,0) 55%),
+                  linear-gradient(145deg, rgba(255,255,255,.28), rgba(255,255,255,.08));
+      border: 1px solid rgba(255,255,255,.22);
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      position:relative;
+      overflow:hidden;
+    }
+    .logo::after{
+      content:"";
+      position:absolute; inset:-50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.55), transparent 45%);
+      transform: rotate(20deg);
+      opacity:.7;
+    }
+    .brand h1{
+      margin:0;
+      font-size: 1.25rem;
+      letter-spacing: .2px;
+      line-height:1.05;
+    }
+    .brand .tag{
+      font-size: .85rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .pill{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.20);
+      background: rgba(0,0,0,.12);
+      color: var(--text);
+      font-size: .9rem;
+      white-space:nowrap;
+    }
+    .pill strong{ font-weight: 800; }
+    .pills{
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .screen{
+      padding: 18px;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.07));
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      min-height: 560px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .hidden{ display:none !important; }
+
+    /* cards and buttons */
+    .row{ display:flex; gap: 14px; flex-wrap:wrap; }
+    .col{ flex:1 1 280px; }
+    .card{
+      border-radius: 18px;
+      background: rgba(0,0,0,.10);
+      border: 1px solid rgba(255,255,255,.16);
+      padding: 14px;
+    }
+
+    .title{
+      font-size: 1.55rem;
+      margin: 4px 0 10px;
+      letter-spacing: .2px;
+    }
+    .subtitle{ color: var(--muted); margin:0 0 10px; line-height:1.35; }
+    .small{ font-size: .92rem; color: var(--muted); line-height:1.35; }
+
+    .btnbar{ display:flex; gap: 10px; flex-wrap:wrap; }
+    button, .btn{
+      appearance:none; border:none; cursor:pointer;
+      border-radius: 16px;
+      padding: 12px 14px;
+      color: #052327;
+      background: linear-gradient(180deg, rgba(124,235,255,.95), rgba(124,235,255,.75));
+      font-weight: 800;
+      letter-spacing:.2px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.28);
+      transition: transform .08s ease, filter .2s ease, opacity .2s ease;
+      display:inline-flex;
+      align-items:center;
+      gap: 10px;
+      user-select:none;
+    }
+    button:hover{ transform: translateY(-1px); filter: brightness(1.02); }
+    button:active{ transform: translateY(1px); }
+    button:focus{ outline:none; box-shadow: var(--shadow), var(--focus); }
+    .btn-secondary{
+      background: linear-gradient(180deg, rgba(182,255,109,.95), rgba(182,255,109,.70));
+      color:#153100;
+    }
+    .btn-ghost{
+      background: rgba(255,255,255,.10);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: none;
+    }
+    .btn-danger{
+      background: linear-gradient(180deg, rgba(255,107,107,.95), rgba(255,107,107,.72));
+      color:#3a0b0b;
+    }
+    .btn-small{ padding: 10px 12px; border-radius: 14px; font-size:.92rem; }
+    .btn-wide{ min-width: 220px; justify-content:center; }
+
+    .icon{
+      width: 24px; height: 24px;
+      display:inline-grid; place-items:center;
+      border-radius: 10px;
+      background: rgba(0,0,0,.12);
+      border: 1px solid rgba(255,255,255,.18);
+      color: var(--text);
+      font-weight: 900;
+      font-size: 14px;
+    }
+
+    /* start screen planet */
+    .planet-wrap{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      align-items:center;
+    }
+    @media (max-width: 860px){
+      .planet-wrap{ grid-template-columns: 1fr; }
+    }
+
+    .planet{
+      width: min(420px, 92vw);
+      aspect-ratio:1;
+      border-radius: 999px;
+      margin: 8px auto;
+      background:
+        radial-gradient(circle at 30% 25%, rgba(255,255,255,.95), rgba(255,255,255,0) 42%),
+        radial-gradient(circle at 70% 72%, rgba(255,255,255,.22), rgba(255,255,255,0) 55%),
+        radial-gradient(circle at 42% 62%, rgba(182,255,109,.85), rgba(182,255,109,0) 52%),
+        radial-gradient(circle at 68% 44%, rgba(124,235,255,.75), rgba(124,235,255,0) 58%),
+        linear-gradient(145deg, rgba(0,0,0,.20), rgba(255,255,255,.10));
+      border: 1px solid rgba(255,255,255,.24);
+      box-shadow: 0 28px 80px rgba(0,0,0,.40);
+      position:relative;
+      overflow:hidden;
+      transform: translateZ(0);
+    }
+    .planet::before{
+      content:"";
+      position:absolute; inset:-20%;
+      background:
+        radial-gradient(circle at 22% 55%, rgba(0,0,0,.12), transparent 48%),
+        radial-gradient(circle at 62% 35%, rgba(0,0,0,.10), transparent 52%),
+        radial-gradient(circle at 76% 72%, rgba(0,0,0,.10), transparent 50%);
+      filter: blur(2px);
+      opacity:.9;
+    }
+    .planet::after{
+      content:"";
+      position:absolute; inset:-10%;
+      background:
+        linear-gradient(115deg, rgba(255,255,255,.22), transparent 45%),
+        linear-gradient(295deg, rgba(255,255,255,.12), transparent 52%);
+      transform: rotate(8deg);
+      opacity:.5;
+    }
+    .ring{
+      position:absolute;
+      inset: 20% -30%;
+      border-radius: 999px;
+      border: 2px solid rgba(255,255,255,.20);
+      transform: rotate(-18deg);
+      filter: blur(.2px);
+      opacity: .75;
+    }
+    .ring::after{
+      content:"";
+      position:absolute; inset:-6px;
+      border-radius:999px;
+      border: 1px dashed rgba(255,255,255,.18);
+      opacity:.8;
+    }
+
+    /* Terra */
+    .terra{
+      display:flex; gap: 12px; align-items:flex-start;
+    }
+    .terra .face{
+      width: 52px; height: 52px;
+      border-radius: 18px;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.95), rgba(255,255,255,0) 50%),
+                  linear-gradient(145deg, rgba(124,235,255,.70), rgba(182,255,109,.55));
+      border: 1px solid rgba(255,255,255,.22);
+      box-shadow: 0 10px 25px rgba(0,0,0,.25);
+      position:relative;
+      flex: 0 0 auto;
+      overflow:hidden;
+    }
+    .terra .face::before{
+      content:"";
+      position:absolute; inset: 15px 12px auto 12px;
+      height: 10px;
+      background: rgba(0,0,0,.18);
+      border-radius: 999px;
+      opacity: .35;
+    }
+    .terra .face::after{
+      content:"";
+      position:absolute; left: 16px; top: 18px;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(255,255,255,.88);
+      box-shadow: 14px 2px 0 rgba(255,255,255,.88);
+      opacity:.9;
+    }
+    .bubbleTalk{
+      padding: 12px 12px;
+      border-radius: 18px;
+      background: rgba(0,0,0,.16);
+      border: 1px solid rgba(255,255,255,.18);
+      max-width: 620px;
+    }
+    .bubbleTalk .name{
+      font-weight: 900;
+      letter-spacing:.2px;
+      margin: 0 0 6px;
+    }
+    .bubbleTalk p{ margin:0; color: var(--text); line-height:1.38; }
+    .bubbleTalk .hint{ margin-top: 8px; color: var(--muted); font-size:.9rem; }
+
+    /* Map */
+    .map{
+      position:relative;
+      margin-top: 10px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.16);
+      background:
+        radial-gradient(500px 240px at 30% 35%, rgba(182,255,109,.25), transparent 60%),
+        radial-gradient(420px 240px at 70% 70%, rgba(124,235,255,.22), transparent 60%),
+        rgba(0,0,0,.10);
+      padding: 14px;
+      overflow:hidden;
+    }
+    .zoneGrid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    @media (max-width: 860px){
+      .zoneGrid{ grid-template-columns: 1fr; }
+    }
+    .zone{
+      position:relative;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      padding: 12px;
+      min-height: 122px;
+      cursor:pointer;
+      transition: transform .08s ease, background .2s ease, opacity .2s ease;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap: 10px;
+    }
+    .zone:hover{ transform: translateY(-1px); background: rgba(255,255,255,.08); }
+    .zone.locked{
+      opacity:.62;
+      cursor:not-allowed;
+      filter: grayscale(.35);
+    }
+    .zone h3{ margin:0; font-size:1.05rem; }
+    .zone .badgeRow{ display:flex; gap:8px; flex-wrap:wrap; }
+    .chip{
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.12);
+      font-weight: 800;
+      font-size: .82rem;
+      color: var(--text);
+      display:inline-flex; align-items:center; gap:6px;
+    }
+    .chip.good{ border-color: rgba(93,255,174,.40); }
+    .chip.warn{ border-color: rgba(255,209,93,.42); }
+    .chip.bad{ border-color: rgba(255,107,107,.40); }
+
+    /* Mission list */
+    .mission{
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.10);
+      padding: 12px;
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+    }
+    .mission h3{ margin:0; }
+    .mission ul{ margin: 6px 0 0 18px; padding:0; color: var(--text); }
+    .mission li{ margin: 4px 0; color: var(--muted); }
+    .mission .actions{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+    /* Gameplay */
+    .hud{
+      display:flex; flex-wrap:wrap; gap: 10px;
+      margin: 8px 0 10px;
+    }
+    .stat{
+      flex: 1 1 170px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.10);
+      padding: 10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      min-width: 170px;
+    }
+    .stat .k{ color: var(--muted); font-weight: 800; }
+    .stat .v{ font-weight: 900; font-size: 1.05rem; }
+    .bar{
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.12);
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.12);
+    }
+    .bar > div{
+      height:100%;
+      width: 50%;
+      background: linear-gradient(90deg, rgba(255,107,107,.90), rgba(255,209,93,.90), rgba(93,255,174,.90));
+      border-radius: 999px;
+    }
+
+    .scenario{
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 14px;
+      margin-top: 10px;
+    }
+    @media (max-width: 920px){
+      .scenario{ grid-template-columns: 1fr; }
+    }
+    .prompt{
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.10);
+      padding: 14px;
+    }
+    .options{
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+    }
+    .choice{
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      padding: 12px;
+      cursor:pointer;
+      transition: transform .08s ease, background .2s ease;
+    }
+    .choice:hover{ transform: translateY(-1px); background: rgba(255,255,255,.08); }
+    .choice h4{ margin:0 0 6px; font-size: 1.02rem;}
+    .choice .impact{
+      display:flex; gap: 8px; flex-wrap:wrap;
+      color: var(--muted); font-size: .9rem;
+    }
+
+    /* Quiz */
+    .q{
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.10);
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .q h4{ margin:0 0 8px;}
+    .q label{
+      display:flex; gap:10px; align-items:flex-start;
+      padding: 10px 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      margin: 8px 0;
+      cursor:pointer;
+    }
+    .q input{ margin-top: 3px; }
+
+    /* Achievements */
+    .badges{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+    @media (max-width: 860px){
+      .badges{ grid-template-columns: 1fr; }
+    }
+    .badge{
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.10);
+      padding: 12px;
+      display:flex;
+      gap: 12px;
+      align-items:flex-start;
+      opacity: 1;
+    }
+    .badge.locked{ opacity:.6; filter: grayscale(.35); }
+    .badge .medal{
+      width: 44px; height: 44px;
+      border-radius: 16px;
+      display:grid; place-items:center;
+      border: 1px solid rgba(255,255,255,.20);
+      background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.95), rgba(255,255,255,0) 55%),
+                  linear-gradient(145deg, rgba(255,209,93,.85), rgba(93,255,174,.60));
+      box-shadow: 0 10px 25px rgba(0,0,0,.25);
+      font-size: 18px;
+    }
+    .badge h4{ margin:0; }
+    .badge p{ margin:6px 0 0; color: var(--muted); }
+
+    /* Sliders/selects */
+    input[type="range"]{ width: 100%; }
+    select, input[type="text"]{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      outline:none;
+    }
+    select:focus, input[type="text"]:focus{ box-shadow: var(--focus); border-color: rgba(124,235,255,.45); }
+
+    /* Toast */
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(0,0,0,.65);
+      border: 1px solid rgba(255,255,255,.18);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 18px 60px rgba(0,0,0,.35);
+      color: var(--text);
+      display:none;
+      z-index: 50;
+      max-width: min(760px, 92vw);
+    }
+    .toast.show{ display:block; animation: toastIn .2s ease; }
+    @keyframes toastIn{
+      from{ transform: translateX(-50%) translateY(8px); opacity:0; }
+      to{ transform: translateX(-50%) translateY(0); opacity:1; }
+    }
+
+    /* Accessibility helper */
+    .sr-only{
+      position:absolute;
+      width:1px; height:1px; padding:0; margin:-1px;
+      overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="sky" id="sky"></div>
+
+  <div class="wrap">
+    <div class="app" role="application" aria-label="EcoPlanet Prototype">
+      <!-- Top bar (hidden on start screen for a cleaner splash) -->
+      <header class="topbar hidden" id="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <h1 id="ui-title">EcoPlanet</h1>
+            <div class="tag" id="ui-tag">Build a thriving eco-friendly planet</div>
+          </div>
+        </div>
+        <div class="pills" aria-label="HUD">
+          <div class="pill" title="Eco Health">
+            🌍 <span id="hud-health-label">Eco Health</span>: <strong id="hud-health">50</strong>
+          </div>
+          <div class="pill" title="Points">
+            ⭐ <span id="hud-points-label">Points</span>: <strong id="hud-points">0</strong>
+          </div>
+          <div class="pill" title="Player">
+            🧑‍🌾 <strong id="hud-player">Planner</strong>
+          </div>
+        </div>
+      </header>
+
+      <main class="screen" id="screenRoot">
+        <!-- START -->
+        <section id="screen-start">
+          <div class="planet-wrap">
+            <div>
+              <div class="title" style="font-size:2.1rem;margin-top:0;">EcoPlanet</div>
+              <p class="subtitle" id="start-subtitle">
+                Restore a damaged world by making sustainable choices.
+              </p>
+
+              <div class="terra" style="margin-top:14px;">
+                <div class="face" aria-hidden="true"></div>
+                <div class="bubbleTalk">
+                  <div class="name">Terra</div>
+                  <p id="start-terra">
+                    Hi! I’m Terra. I’ll guide you through missions about clean water, renewable energy, and smart waste choices.
+                    Your decisions will shape the planet.
+                  </p>
+                  <div class="hint" id="start-hint">Tip: You can adjust text size and language in Options.</div>
+                </div>
+              </div>
+
+              <div class="btnbar" style="margin-top:16px;">
+                <button class="btn-wide" id="btn-start">
+                  <span class="icon" aria-hidden="true">▶</span>
+                  <span id="start-btn-label">Start</span>
+                </button>
+                <button class="btn-ghost btn-wide" id="btn-start-options">
+                  <span class="icon" aria-hidden="true">⚙</span>
+                  <span id="start-options-label">Options</span>
+                </button>
+              </div>
+
+              <p class="small" style="margin-top:14px" id="start-footnote">
+                Prototype for web/tablet. No proprietary tools required.
+              </p>
+            </div>
+
+            <div>
+              <div class="planet" aria-label="EcoPlanet artwork">
+                <div class="ring" aria-hidden="true"></div>
+              </div>
+              <div class="card" style="margin-top:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                  <div>
+                    <div style="font-weight:900" id="quick-status-title">Quick Status</div>
+                    <div class="small" id="quick-status-sub">Your planet starts polluted — fix it!</div>
+                  </div>
+                  <div style="min-width:150px;">
+                    <div class="bar" aria-label="Eco health bar"><div id="quick-health-bar"></div></div>
+                    <div class="small" style="margin-top:6px;" id="quick-health-text">Eco Health: 50/100</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- MAIN MENU -->
+        <section id="screen-menu" class="hidden">
+          <div class="row">
+            <div class="col">
+              <div class="title" id="menu-title">Main Menu</div>
+              <p class="subtitle" id="menu-sub">Choose what you want to do next.</p>
+
+              <div class="btnbar" style="margin-top:12px;">
+                <button class="btn-wide" id="btn-play">
+                  <span class="icon" aria-hidden="true">🌱</span>
+                  <span id="menu-play">Play Game</span>
+                </button>
+                <button class="btn-ghost btn-wide" id="btn-options">
+                  <span class="icon" aria-hidden="true">⚙</span>
+                  <span id="menu-options">Options</span>
+                </button>
+                <button class="btn-ghost btn-wide" id="btn-achievements">
+                  <span class="icon" aria-hidden="true">🏅</span>
+                  <span id="menu-achievements">Achievements</span>
+                </button>
+                <button class="btn-danger btn-wide" id="btn-exit">
+                  <span class="icon" aria-hidden="true">⎋</span>
+                  <span id="menu-exit">Exit</span>
+                </button>
+              </div>
+
+              <div class="card" style="margin-top:14px;">
+                <div style="font-weight:900;margin-bottom:6px;" id="menu-story-title">Story & Setting</div>
+                <div class="small" id="menu-story">
+                  You are a city planner restoring a cartoon-style planet made of zones:
+                  polluted rivers, forests, and urban areas. Terra explains real-world environmental problems and helps you pick solutions.
+                </div>
+              </div>
+            </div>
+
+            <div class="col">
+              <div class="card">
+                <div style="font-weight:900;margin-bottom:6px;" id="menu-progress-title">Progress</div>
+                <div class="hud" aria-label="Resources overview">
+                  <div class="stat"><span class="k">💧 <span id="r-water">Water</span></span> <span class="v" id="hud-water">6</span></div>
+                  <div class="stat"><span class="k">⚡ <span id="r-energy">Energy</span></span> <span class="v" id="hud-energy">6</span></div>
+                  <div class="stat"><span class="k">🌰 <span id="r-seeds">Seeds</span></span> <span class="v" id="hud-seeds">6</span></div>
+                  <div class="stat"><span class="k">🧺 <span id="r-waste">Waste</span></span> <span class="v" id="hud-waste">4</span></div>
+                </div>
+                <div class="small" id="menu-rules">
+                  Rules: resources are finite. Unsustainable choices damage the environment, while sustainable choices improve long-term outcomes.
+                </div>
+              </div>
+
+              <div class="terra" style="margin-top:12px;">
+                <div class="face" aria-hidden="true"></div>
+                <div class="bubbleTalk">
+                  <div class="name">Terra</div>
+                  <p id="menu-terra">
+                    Ready when you are! Each mission ends with feedback and a short quiz. Get answers right to unlock bonus rewards.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- OPTIONS -->
+        <section id="screen-options" class="hidden">
+          <div class="row">
+            <div class="col">
+              <div class="title" id="opt-title">Options</div>
+              <p class="subtitle" id="opt-sub">These settings affect accessibility and immersion only.</p>
+
+              <div class="card">
+                <div style="font-weight:900;margin-bottom:10px;" id="opt-audio-title">Sound & Music Volume</div>
+
+                <div class="small" id="opt-music-label">Music</div>
+                <input type="range" min="0" max="100" value="30" id="opt-music" aria-label="Music volume"/>
+
+                <div class="small" style="margin-top:10px;" id="opt-sfx-label">Sound Effects</div>
+                <input type="range" min="0" max="100" value="55" id="opt-sfx" aria-label="Sound effects volume"/>
+
+                <div class="small" style="margin-top:10px;" id="opt-audio-note">
+                  You’ll hear gentle nature-inspired sounds after you press any button.
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <div style="font-weight:900;margin-bottom:10px;" id="opt-access-title">Accessibility</div>
+
+                <div class="small" id="opt-textsize">Text Size</div>
+                <select id="opt-text" aria-label="Text size">
+                  <option value="0.92">Small</option>
+                  <option value="1" selected>Medium</option>
+                  <option value="1.12">Large</option>
+                  <option value="1.22">Extra Large</option>
+                </select>
+
+                <div class="small" style="margin-top:10px;" id="opt-tutorial">Tutorial Toggle</div>
+                <select id="opt-tutorial-toggle" aria-label="Tutorial toggle">
+                  <option value="on" selected>On</option>
+                  <option value="off">Off</option>
+                </select>
+
+                <div class="small" style="margin-top:10px;" id="opt-language">Language Selection</div>
+                <select id="opt-lang" aria-label="Language selection">
+                  <option value="en" selected>English</option>
+                  <option value="fr">Français</option>
+                  <option value="sw">Kiswahili</option>
+                </select>
+
+                <div class="small" style="margin-top:10px;" id="opt-note">
+                  Note: These options do not change difficulty or learning outcomes.
+                </div>
+              </div>
+
+              <div class="btnbar" style="margin-top:12px;">
+                <button class="btn-secondary btn-wide" id="btn-opt-save">
+                  <span class="icon" aria-hidden="true">✓</span>
+                  <span id="opt-save">Save</span>
+                </button>
+                <button class="btn-ghost btn-wide" id="btn-opt-back">
+                  <span class="icon" aria-hidden="true">↩</span>
+                  <span id="opt-back">Back</span>
+                </button>
+                <button class="btn-ghost btn-wide" id="btn-opt-reset">
+                  <span class="icon" aria-hidden="true">♻</span>
+                  <span id="opt-reset">Reset Progress</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="col">
+              <div class="terra">
+                <div class="face" aria-hidden="true"></div>
+                <div class="bubbleTalk">
+                  <div class="name">Terra</div>
+                  <p id="opt-terra">
+                    If you’re playing on a tablet, you might like larger text. Turn the tutorial on if you want guided hints during missions.
+                  </p>
+                  <div class="hint" id="opt-terra-hint">
+                    Audio is optional. It’s here to boost immersion, not performance.
+                  </div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <div style="font-weight:900;margin-bottom:6px;" id="about-title">About this prototype</div>
+                <div class="small" id="about-body">
+                  EcoPlanet is a free-to-play educational strategy game. Cosmetic upgrades can exist without affecting gameplay.
+                  The learning goal is to teach sustainability through decisions, feedback, and quizzes.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ACHIEVEMENTS -->
+        <section id="screen-achievements" class="hidden">
+          <div class="row">
+            <div class="col">
+              <div class="title" id="ach-title">Achievements</div>
+              <p class="subtitle" id="ach-sub">Earn badges by making sustainable choices.</p>
+
+              <div class="badges" id="badge-grid" aria-label="Badges list"></div>
+
+              <div class="btnbar" style="margin-top:12px;">
+                <button class="btn-ghost btn-wide" id="btn-ach-back">
+                  <span class="icon" aria-hidden="true">↩</span>
+                  <span id="ach-back">Back</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="col">
+              <div class="card">
+                <div style="font-weight:900;margin-bottom:6px;" id="ach-tip-title">How to unlock</div>
+                <div class="small" id="ach-tip">
+                  Finish missions, answer quizzes, and keep Eco Health rising.
+                  Try to balance resources without overusing non-renewables.
+                </div>
+              </div>
+
+              <div class="terra" style="margin-top:12px;">
+                <div class="face" aria-hidden="true"></div>
+                <div class="bubbleTalk">
+                  <div class="name">Terra</div>
+                  <p id="ach-terra">Badges are little celebrations of your learning. Keep going — new zones open as you help the planet thrive!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TUTORIAL -->
+        <section id="screen-tutorial" class="hidden">
+          <div class="row">
+            <div class="col">
+              <div class="title" id="tut-title">Tutorial with Terra</div>
+              <p class="subtitle" id="tut-sub">A quick tour before your first mission.</p>
+
+              <div class="terra">
+                <div class="face" aria-hidden="true"></div>
+                <div class="bubbleTalk">
+                  <div class="name">Terra</div>
+                  <p id="tut-line"></p>
+                  <div class="hint" id="tut-hint"></div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <div style="font-weight:900;margin-bottom:6px;" id="tut-keys-title">What you’ll do</div>
+                <div class="small" id="tut-keys">
+                  • Manage resources (water, energy, seeds).<br/>
+                  • Make decisions about pollution, energy, and waste.<br/>
+                  • Learn from feedback and take short quizzes.
+                </div>
+              </div>
+
+              <div class="btnbar" style="margin-top:12px;">
+                <button class="btn-secondary btn-wide" id="btn-tut-next">
+                  <span class="icon" aria-hidden="true">→</span>
+                  <span id="tut-next">Next</span>
+                </button>
+                <button class="btn-ghost btn-wide" id="btn-tut-skip">
+                  <span class="icon" aria-hidden="true">⤼</span>
+                  <span id="tut-skip">Skip</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="col">
+              <div class="card">
+                <div style="font-weight:900;margin-bottom:10px;" id="avatar-title">Your Planner Avatar</div>
+                <div class="small" id="avatar-sub">Pick a name and style. This is cosmetic only.</div>
+
+                <div style="margin-top:10px;">
+                  <div class="small" id="avatar-name-label">Name</div>
+                  <input type="text" id="avatar-name" placeholder="Eco Planner" maxlength="18" />
+                </div>
+
+                <div style="margin-top:10px;">
+                  <div class="small" id="avatar-style-label">Style</div>
+                  <select id="avatar-style" aria-label="Avatar style">
+                    <option value="cap" selected>Cap 🧢</option>
+                    <option value="hat">Sun Hat 👒</option>
+                    <option value="helmet">Recycling Helmet 🪖</option>
+                  </select>
+                </div>
+
+                <div style="margin-top:10px;">
+                  <div class="small" id="avatar-color-label">Accent Color</div>
+                  <select id="avatar-color" aria-label="Avatar accent color">
+                    <option value="aqua" selected>Aqua</option>
+                    <option value="lime">Lime</option>
+                    <option value="sun">Sun</option>
+                  </select>
+                </div>
+
+                <div class="btnbar" style="margin-top:12px;">
+                  <button class="btn-ghost btn-wide" id="btn-avatar-save">
+                    <span class="icon" aria-hidden="true">💾</span>
+                    <span id="avatar-save">Save Avatar</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <div style="font-weight:900;margin-bottom:6px;" id="spirits-title">Environmental Spirits</div>
+                <div class="small" id="spirits-body">
+                  Meet your helpers: Water 💧, Trees 🌳, and Energy ⚡ spirits. They react to your choices and show how the ecosystem changes.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- MAP -->
+        <section id="screen-map" class="hidden">
+          <div class="row">
+            <div class="col">
+              <div class="title" id="map-title">Eco‑City Map</div>
+              <p class="subtitle" id="map-sub">Choose a zone to restore. New zones unlock as you progress.</p>
+
+              <div class="map">
+                <div class="zoneGrid" id="zoneGrid"></div>
+              </div>
+
+              <div class="btnbar" style="margin-top:12px;">
+                <button class="btn-ghost btn-wide" id="btn-map-menu">
+                  <span class="icon" aria-hidden="true">≡</span>
+                  <span id="map-menu">Main Menu</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="col">
+              <div class="card">
+                <div style="font-weight:900;margin-bottom:8px;" id="status-title">City Status</div>
+                <div class="small" id="status-body">
+                  Your goal is to grow a thriving eco‑city while keeping the ecosystem balanced.
+                  Watch Eco Health and keep resources from running out.
+                </div>
+
+                <div style="margin-top:10px;">
+                  <div class="small" id="status-health">Eco Health</div>
+                  <div class="bar" aria-label="Eco health bar">
+                    <div id="map-health-bar"></div>
+                  </div>
+                  <div class="small" style="margin-top:6px;" id="map-health-text">50/100</div>
+                </div>
+
+                <div class="hud" style="margin-top:10px;">
+                  <div class="stat"><span class="k">💧 Water</span> <span class="v" id="map-water">6</span></div>
+                  <div class="stat"><span class="k">⚡ Energy</span> <span class="v" id="map-energy">6</span></div>
+                  <div class="stat"><span class="k">🌰 Seeds</span> <span class="v" id="map-seeds">6</span></div>
+                  <div class="stat"><span class="k">🧺 Waste</span> <span class="v" id="map-waste">4</span></div>
+                </div>
+              </div>
+
+              <div class="terra" style="margin-top:12px;">
+                <div class="face" aria-hidden="true"></div>
+                <div class="bubbleTalk">
+                  <div class="name">Terra</div>
+                  <p id="map-terra">Start with the polluted zone. Each mission gives you feedback and a quiz so you learn while you play.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- MISSION -->
+        <section id="screen-mission" class="hidden">
+          <div class="row">
+            <div class="col">
+              <div class="title" id="mission-title">Mission</div>
+              <p class="subtitle" id="mission-sub">Briefing and objectives.</p>
+
+              <div class="mission" id="missionCard"></div>
+
+              <div class="btnbar" style="margin-top:12px;">
+                <button class="btn-secondary btn-wide" id="btn-mission-start">
+                  <span class="icon" aria-hidden="true">▶</span>
+                  <span id="mission-start">Start Mission</span>
+                </button>
+                <button class="btn-ghost btn-wide" id="btn-mission-back">
+                  <span class="icon" aria-hidden="true">↩</span>
+                  <span id="mission-back">Back to Map</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="col">
+              <div class="terra">
+                <div class="face" aria-hidden="true"></div>
+                <div class="bubbleTalk">
+                  <div class="name">Terra</div>
+                  <p id="mission-terra">Think like a planner: every choice has a cost and a consequence. Aim for long-term balance, not quick fixes.</p>
+                  <div class="hint" id="mission-terra-hint">If the tutorial is ON, I’ll offer hints during the scenario.</div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <div style="font-weight:900;margin-bottom:6px;" id="mission-mech-title">Mechanics in this mission</div>
+                <div class="small" id="mission-mech">
+                  Resource management, decision-making, and feedback loops. Your goal is to improve Eco Health without draining resources.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- GAMEPLAY -->
+        <section id="screen-play" class="hidden">
+          <div class="title" id="play-title">Gameplay Scenario</div>
+          <p class="subtitle" id="play-sub">Make choices that shape a living ecosystem.</p>
+
+          <div class="hud" aria-label="Gameplay HUD">
+            <div class="stat"><span class="k">💧 Water</span> <span class="v" id="play-water">6</span></div>
+            <div class="stat"><span class="k">⚡ Energy</span> <span class="v" id="play-energy">6</span></div>
+            <div class="stat"><span class="k">🌰 Seeds</span> <span class="v" id="play-seeds">6</span></div>
+            <div class="stat"><span class="k">🧺 Waste</span> <span class="v" id="play-waste">4</span></div>
+            <div class="stat"><span class="k">🌍 Eco Health</span> <span class="v" id="play-health">50</span></div>
+          </div>
+
+          <div class="scenario">
+            <div class="prompt">
+              <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;">
+                <div>
+                  <div style="font-weight:900" id="scenario-step">Step 1 of 3</div>
+                  <div class="small" id="scenario-zone">Zone: —</div>
+                </div>
+                <button class="btn-ghost btn-small" id="btn-hint">
+                  <span class="icon" aria-hidden="true">💡</span>
+                  <span id="hint-label">Hint</span>
+                </button>
+              </div>
+
+              <div class="title" style="font-size:1.25rem;margin:10px 0 8px;" id="scenario-title">—</div>
+              <div class="small" id="scenario-text">—</div>
+
+              <div class="terra hidden" id="hintBox" style="margin-top:12px;">
+                <div class="face" aria-hidden="true"></div>
+                <div class="bubbleTalk">
+                  <div class="name">Terra</div>
+                  <p id="hintText"></p>
+                </div>
+              </div>
+            </div>
+
+            <div class="options" id="choices"></div>
+          </div>
+
+          <div class="btnbar" style="margin-top:12px;">
+            <button class="btn-ghost btn-wide" id="btn-play-abort">
+              <span class="icon" aria-hidden="true">↩</span>
+              <span id="play-abort">Back to Mission</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- FEEDBACK + QUIZ -->
+        <section id="screen-feedback" class="hidden">
+          <div class="row">
+            <div class="col">
+              <div class="title" id="fb-title">Feedback & Quiz</div>
+              <p class="subtitle" id="fb-sub">See your impact, then answer a short quiz.</p>
+
+              <div class="card">
+                <div style="font-weight:900;margin-bottom:8px;" id="report-title">Environmental Impact Report</div>
+                <div class="small" id="report-body">—</div>
+
+                <div style="margin-top:10px;">
+                  <div class="small" id="fb-scoreline">Score</div>
+                  <div class="hud">
+                    <div class="stat"><span class="k">⭐ Points earned</span> <span class="v" id="fb-points">0</span></div>
+                    <div class="stat"><span class="k">🌍 Eco Health change</span> <span class="v" id="fb-healthdelta">+0</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="q" id="quizBox"></div>
+
+              <div class="btnbar" style="margin-top:12px;">
+                <button class="btn-secondary btn-wide" id="btn-quiz-submit">
+                  <span class="icon" aria-hidden="true">✓</span>
+                  <span id="quiz-submit">Submit Quiz</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="col">
+              <div class="terra">
+                <div class="face" aria-hidden="true"></div>
+                <div class="bubbleTalk">
+                  <div class="name">Terra</div>
+                  <p id="fb-terra">—</p>
+                  <div class="hint" id="fb-terra-hint">Your feedback changes based on your performance.</div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <div style="font-weight:900;margin-bottom:6px;" id="fb-remember-title">Remember</div>
+                <div class="small" id="fb-remember">
+                  Sustainable choices usually improve the ecosystem over time. Quick fixes can cost resources or cause new problems.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- REWARDS -->
+        <section id="screen-rewards" class="hidden">
+          <div class="row">
+            <div class="col">
+              <div class="title" id="rw-title">Rewards & Progress Summary</div>
+              <p class="subtitle" id="rw-sub">Badges, points, and unlockables.</p>
+
+              <div class="card">
+                <div style="font-weight:900;margin-bottom:8px;" id="rw-earned-title">You earned</div>
+                <div class="small" id="rw-earned">—</div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <div style="font-weight:900;margin-bottom:8px;" id="rw-next-title">What’s next</div>
+                <div class="small" id="rw-next">—</div>
+              </div>
+
+              <div class="btnbar" style="margin-top:12px;">
+                <button class="btn-secondary btn-wide" id="btn-rw-map">
+                  <span class="icon" aria-hidden="true">🗺</span>
+                  <span id="rw-to-map">Return to Eco‑City Map</span>
+                </button>
+                <button class="btn-ghost btn-wide" id="btn-rw-next">
+                  <span class="icon" aria-hidden="true">→</span>
+                  <span id="rw-next-mission">Next Mission</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="col">
+              <div class="terra">
+                <div class="face" aria-hidden="true"></div>
+                <div class="bubbleTalk">
+                  <div class="name">Terra</div>
+                  <p id="rw-terra">Nice work! Each mission builds your understanding of sustainability and unlocks new tools and zones.</p>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <div style="font-weight:900;margin-bottom:6px;" id="rw-report-title">End‑of‑level report</div>
+                <div class="small" id="rw-report">
+                  You’ll get a short summary after each mission. Replay missions to improve your Eco Health and earn more badges.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- EXIT -->
+        <section id="screen-exit" class="hidden">
+          <div class="title" id="exit-title">See you soon!</div>
+          <p class="subtitle" id="exit-sub">Your planet is saved. (Or… at least started.)</p>
+          <div class="terra" style="margin-top:12px;">
+            <div class="face" aria-hidden="true"></div>
+            <div class="bubbleTalk">
+              <div class="name">Terra</div>
+              <p id="exit-terra">Come back anytime to try different strategies and see how the ecosystem responds.</p>
+            </div>
+          </div>
+          <div class="btnbar" style="margin-top:12px;">
+            <button class="btn-wide" id="btn-exit-home">
+              <span class="icon" aria-hidden="true">⌂</span>
+              <span id="exit-home">Back to Start</span>
+            </button>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // -----------------------
+    // EcoPlanet Prototype
+    // Single-file SPA with screens matching the provided flow.
+    // -----------------------
+
+    const $ = (sel, el=document) => el.querySelector(sel);
+    const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
+
+    // Minimal i18n (English default)
+    const I18N = {
+      en: {
+        tag: "Build a thriving eco-friendly planet",
+        startSubtitle: "Restore a damaged world by making sustainable choices.",
+        startTerra: "Hi! I’m Terra. I’ll guide you through missions about clean water, renewable energy, and smart waste choices. Your decisions will shape the planet.",
+        startHint: "Tip: You can adjust text size and language in Options.",
+        startBtn: "Start",
+        startOptions: "Options",
+        quickStatusTitle:"Quick Status",
+        quickStatusSub:"Your planet starts polluted — fix it!",
+        mainMenu:"Main Menu",
+        playGame:"Play Game",
+        options:"Options",
+        achievements:"Achievements",
+        exit:"Exit",
+        menuSub:"Choose what you want to do next.",
+        storyTitle:"Story & Setting",
+        storyBody:"You are a city planner restoring a cartoon-style planet made of zones: polluted rivers, forests, and urban areas. Terra explains real-world environmental problems and helps you pick solutions.",
+        progressTitle:"Progress",
+        rules:"Rules: resources are finite. Unsustainable choices damage the environment, while sustainable choices improve long-term outcomes.",
+        menuTerra:"Ready when you are! Each mission ends with feedback and a short quiz. Get answers right to unlock bonus rewards.",
+        optTitle:"Options",
+        optSub:"These settings affect accessibility and immersion only.",
+        audioTitle:"Sound & Music Volume",
+        music:"Music",
+        sfx:"Sound Effects",
+        audioNote:"You’ll hear gentle nature-inspired sounds after you press any button.",
+        accessTitle:"Accessibility",
+        textSize:"Text Size",
+        tutorial:"Tutorial Toggle",
+        language:"Language Selection",
+        note:"Note: These options do not change difficulty or learning outcomes.",
+        save:"Save",
+        back:"Back",
+        reset:"Reset Progress",
+        aboutTitle:"About this prototype",
+        aboutBody:"EcoPlanet is a free-to-play educational strategy game. Cosmetic upgrades can exist without affecting gameplay. The learning goal is to teach sustainability through decisions, feedback, and quizzes.",
+        achTitle:"Achievements",
+        achSub:"Earn badges by making sustainable choices.",
+        howTitle:"How to unlock",
+        howBody:"Finish missions, answer quizzes, and keep Eco Health rising. Try to balance resources without overusing non-renewables.",
+        achTerra:"Badges are little celebrations of your learning. Keep going — new zones open as you help the planet thrive!",
+        tutTitle:"Tutorial with Terra",
+        tutSub:"A quick tour before your first mission.",
+        tutNext:"Next",
+        tutSkip:"Skip",
+        avatarTitle:"Your Planner Avatar",
+        avatarSub:"Pick a name and style. This is cosmetic only.",
+        avatarName:"Name",
+        avatarStyle:"Style",
+        avatarColor:"Accent Color",
+        avatarSave:"Save Avatar",
+        spiritsTitle:"Environmental Spirits",
+        spiritsBody:"Meet your helpers: Water 💧, Trees 🌳, and Energy ⚡ spirits. They react to your choices and show how the ecosystem changes.",
+        mapTitle:"Eco‑City Map",
+        mapSub:"Choose a zone to restore. New zones unlock as you progress.",
+        mapMenu:"Main Menu",
+        cityStatus:"City Status",
+        cityBody:"Your goal is to grow a thriving eco‑city while keeping the ecosystem balanced. Watch Eco Health and keep resources from running out.",
+        missionTitle:"Mission",
+        missionSub:"Briefing and objectives.",
+        missionStart:"Start Mission",
+        missionBack:"Back to Map",
+        hint:"Hint",
+        playTitle:"Gameplay Scenario",
+        playSub:"Make choices that shape a living ecosystem.",
+        playAbort:"Back to Mission",
+        fbTitle:"Feedback & Quiz",
+        fbSub:"See your impact, then answer a short quiz.",
+        reportTitle:"Environmental Impact Report",
+        quizSubmit:"Submit Quiz",
+        rememberTitle:"Remember",
+        rememberBody:"Sustainable choices usually improve the ecosystem over time. Quick fixes can cost resources or cause new problems.",
+        rwTitle:"Rewards & Progress Summary",
+        rwSub:"Badges, points, and unlockables.",
+        rwEarnedTitle:"You earned",
+        rwNextTitle:"What’s next",
+        rwToMap:"Return to Eco‑City Map",
+        rwNextMission:"Next Mission",
+        exitTitle:"See you soon!",
+        exitSub:"Your planet is saved. (Or… at least started.)",
+        exitTerra:"Come back anytime to try different strategies and see how the ecosystem responds.",
+        exitHome:"Back to Start",
+        ecoHealth:"Eco Health",
+        points:"Points",
+      },
+      fr: {
+        tag: "Construis une planète éco‑responsable",
+        startSubtitle: "Restaure un monde abîmé grâce à des choix durables.",
+        startTerra: "Salut ! Je suis Terra. Je te guide avec des missions sur l’eau propre, l’énergie renouvelable et la gestion des déchets. Tes décisions façonnent la planète.",
+        startHint: "Astuce : tu peux régler la taille du texte et la langue dans Options.",
+        startBtn: "Commencer",
+        startOptions: "Options",
+        quickStatusTitle:"Statut rapide",
+        quickStatusSub:"Ta planète commence polluée — à toi de jouer !",
+        mainMenu:"Menu principal",
+        playGame:"Jouer",
+        options:"Options",
+        achievements:"Succès",
+        exit:"Quitter",
+        menuSub:"Choisis la suite.",
+        storyTitle:"Histoire & décor",
+        storyBody:"Tu es un planificateur qui restaure une planète cartoon en zones : rivières polluées, forêts, ville. Terra explique les problèmes réels et t’aide à choisir des solutions.",
+        progressTitle:"Progression",
+        rules:"Règles : les ressources sont limitées. Les choix non durables abîment l’environnement, les choix durables améliorent l’avenir.",
+        menuTerra:"Prêt ! Chaque mission se termine par un retour et un mini‑quiz. Réussis pour débloquer des bonus.",
+        optTitle:"Options",
+        optSub:"Ces réglages servent l’accessibilité et l’immersion.",
+        audioTitle:"Volume musique & sons",
+        music:"Musique",
+        sfx:"Effets sonores",
+        audioNote:"Des sons nature doux démarrent après un clic.",
+        accessTitle:"Accessibilité",
+        textSize:"Taille du texte",
+        tutorial:"Tutoriel",
+        language:"Langue",
+        note:"Ces options ne changent ni la difficulté ni l’apprentissage.",
+        save:"Enregistrer",
+        back:"Retour",
+        reset:"Réinitialiser",
+        aboutTitle:"À propos",
+        aboutBody:"EcoPlanet est un jeu éducatif gratuit. Des cosmétiques peuvent exister sans effet sur le gameplay. L’objectif : apprendre la durabilité via décisions, retours et quiz.",
+        achTitle:"Succès",
+        achSub:"Gagne des badges avec des choix durables.",
+        howTitle:"Déblocage",
+        howBody:"Termine des missions, réponds aux quiz, et fais monter la santé éco. Équilibre les ressources.",
+        achTerra:"Les badges célèbrent tes progrès. Continue : de nouvelles zones s’ouvrent quand la planète va mieux !",
+        tutTitle:"Tutoriel avec Terra",
+        tutSub:"Une visite rapide avant la première mission.",
+        tutNext:"Suivant",
+        tutSkip:"Passer",
+        avatarTitle:"Ton avatar",
+        avatarSub:"Choisis un nom et un style. Cosmétique uniquement.",
+        avatarName:"Nom",
+        avatarStyle:"Style",
+        avatarColor:"Couleur",
+        avatarSave:"Sauver l’avatar",
+        spiritsTitle:"Esprits de la nature",
+        spiritsBody:"Tes aides : Eau 💧, Arbres 🌳 et Énergie ⚡. Ils réagissent à tes choix et montrent l’écosystème.",
+        mapTitle:"Carte éco‑ville",
+        mapSub:"Choisis une zone. D’autres se débloquent en avançant.",
+        mapMenu:"Menu",
+        cityStatus:"Statut de la ville",
+        cityBody:"Construis une éco‑ville en gardant l’équilibre. Surveille la santé éco et les ressources.",
+        missionTitle:"Mission",
+        missionSub:"Briefing et objectifs.",
+        missionStart:"Démarrer",
+        missionBack:"Retour carte",
+        hint:"Indice",
+        playTitle:"Scénario",
+        playSub:"Fais des choix qui changent l’écosystème.",
+        playAbort:"Retour mission",
+        fbTitle:"Retour & Quiz",
+        fbSub:"Impact, puis mini‑quiz.",
+        reportTitle:"Rapport d’impact",
+        quizSubmit:"Valider le quiz",
+        rememberTitle:"À retenir",
+        rememberBody:"Les choix durables aident à long terme. Les solutions rapides peuvent coûter cher ou créer d’autres problèmes.",
+        rwTitle:"Récompenses & résumé",
+        rwSub:"Badges, points, déblocages.",
+        rwEarnedTitle:"Tu as gagné",
+        rwNextTitle:"Ensuite",
+        rwToMap:"Retour carte",
+        rwNextMission:"Mission suivante",
+        exitTitle:"À bientôt !",
+        exitSub:"Ta planète est sauvée… ou au moins bien lancée.",
+        exitTerra:"Reviens tester d’autres stratégies et voir les réactions de l’écosystème.",
+        exitHome:"Retour accueil",
+        ecoHealth:"Santé éco",
+        points:"Points",
+      },
+      sw: {
+        tag: "Jenga sayari rafiki kwa mazingira",
+        startSubtitle: "Rekebisha dunia iliyoharibika kwa maamuzi endelevu.",
+        startTerra: "Hujambo! Mimi ni Terra. Nitakuongoza kwenye misheni za maji safi, nishati jadidifu, na usimamizi wa taka. Maamuzi yako yataunda sayari.",
+        startHint: "Kidokezo: unaweza kubadili ukubwa wa maandishi na lugha kwenye Options.",
+        startBtn: "Anza",
+        startOptions: "Options",
+        quickStatusTitle:"Hali ya haraka",
+        quickStatusSub:"Sayari inaanza ikiwa imechafuliwa — iokoe!",
+        mainMenu:"Menyu Kuu",
+        playGame:"Cheza",
+        options:"Options",
+        achievements:"Mafanikio",
+        exit:"Toka",
+        menuSub:"Chagua hatua inayofuata.",
+        storyTitle:"Hadithi & Mazingira",
+        storyBody:"Wewe ni mpangaji wa jiji unayerudisha sayari ya katuni yenye maeneo: mito iliyochafuliwa, misitu, na miji. Terra anaeleza matatizo halisi na kukusaidia kuchagua suluhisho.",
+        progressTitle:"Maendeleo",
+        rules:"Sheria: rasilimali ni chache. Chaguo zisizo endelevu huharibu mazingira, chaguo endelevu huleta mafanikio ya muda mrefu.",
+        menuTerra:"Tuko tayari! Kila misheni ina mrejesho na maswali mafupi. Jibu vizuri upate zawadi.",
+        optTitle:"Options",
+        optSub:"Mipangilio hii ni ya ufikiaji na hisia tu.",
+        audioTitle:"Kiwango cha sauti & muziki",
+        music:"Muziki",
+        sfx:"Sauti ndogo",
+        audioNote:"Sauti za mazingira huanza baada ya kubofya.",
+        accessTitle:"Ufikikaji",
+        textSize:"Ukubwa wa maandishi",
+        tutorial:"Tutorial",
+        language:"Lugha",
+        note:"Mipangilio hii haibadili ugumu wala kujifunza.",
+        save:"Hifadhi",
+        back:"Rudi",
+        reset:"Weka upya",
+        aboutTitle:"Kuhusu",
+        aboutBody:"EcoPlanet ni mchezo wa elimu wa bure. Vipodozi vinaweza kuwepo bila kuathiri mchezo. Lengo ni kujifunza uendelevu kupitia maamuzi, mrejesho, na maswali.",
+        achTitle:"Mafanikio",
+        achSub:"Pata beji kwa maamuzi endelevu.",
+        howTitle:"Jinsi ya kufungua",
+        howBody:"Maliza misheni, jibu maswali, na ongeza Eco Health. Sawazisha rasilimali.",
+        achTerra:"Beji ni sherehe ya kujifunza. Endelea — maeneo mapya hufunguka unaposaidia sayari!",
+        tutTitle:"Tutorial na Terra",
+        tutSub:"Ziara fupi kabla ya misheni ya kwanza.",
+        tutNext:"Ifuatayo",
+        tutSkip:"Ruka",
+        avatarTitle:"Avatar yako",
+        avatarSub:"Chagua jina na mtindo. Hii ni ya mwonekano tu.",
+        avatarName:"Jina",
+        avatarStyle:"Mtindo",
+        avatarColor:"Rangi",
+        avatarSave:"Hifadhi avatar",
+        spiritsTitle:"Roho za mazingira",
+        spiritsBody:"Wasaidizi wako: Maji 💧, Miti 🌳, na Nishati ⚡. Huonyesha mabadiliko ya ikolojia.",
+        mapTitle:"Ramani ya Eco‑City",
+        mapSub:"Chagua eneo la kurejesha. Maeneo mengine hufunguka kadri unavyoendelea.",
+        mapMenu:"Menyu",
+        cityStatus:"Hali ya Jiji",
+        cityBody:"Jenga eco‑city na uweke usawa. Angalia Eco Health na rasilimali zisimalizike.",
+        missionTitle:"Misheni",
+        missionSub:"Maelezo na malengo.",
+        missionStart:"Anza Misheni",
+        missionBack:"Rudi Ramani",
+        hint:"Kidokezo",
+        playTitle:"Tukio la Mchezo",
+        playSub:"Fanya maamuzi yanayobadili ikolojia.",
+        playAbort:"Rudi Misheni",
+        fbTitle:"Mrejesho & Maswali",
+        fbSub:"Ona athari, kisha jibu maswali mafupi.",
+        reportTitle:"Ripoti ya Athari",
+        quizSubmit:"Wasilisha Maswali",
+        rememberTitle:"Kumbuka",
+        rememberBody:"Chaguo endelevu husaidia kwa muda mrefu. Suluhisho za haraka zinaweza kugharimu rasilimali au kuleta matatizo mapya.",
+        rwTitle:"Zawadi & Muhtasari",
+        rwSub:"Beji, pointi, na vitu vya kufungua.",
+        rwEarnedTitle:"Umepewa",
+        rwNextTitle:"Hatua inayofuata",
+        rwToMap:"Rudi Ramani",
+        rwNextMission:"Misheni inayofuata",
+        exitTitle:"Tuonane!",
+        exitSub:"Sayari yako imeokolewa… au angalau imeanza kuimarika.",
+        exitTerra:"Rudi ujaribu mikakati tofauti uone ikolojia inavyojibu.",
+        exitHome:"Rudi Mwanzo",
+        ecoHealth:"Eco Health",
+        points:"Pointi",
+      }
+    };
+
+    const DEFAULT_STATE = () => ({
+      version: 1,
+      player: { name: "Planner", style: "cap", color: "aqua" },
+      settings: { music: 30, sfx: 55, fontScale: 1, tutorial: true, lang: "en" },
+      resources: { water: 6, energy: 6, seeds: 6, waste: 4 },
+      ecoHealth: 50,
+      points: 0,
+      zonesUnlocked: { river: true, city: false, forest: false },
+      missionsDone: {},
+      badges: {},
+      lastScreen: "menu",
+    });
+
+    const BADGES = [
+      { id:"treeHero", icon:"🌳", title:"Tree Hero", desc:"Plant 10 trees across missions." },
+      { id:"riverGuardian", icon:"💧", title:"River Guardian", desc:"Improve river health without draining energy." },
+      { id:"solarStar", icon:"☀️", title:"Solar Star", desc:"Choose renewable energy over fossil fuels." },
+      { id:"recycleRanger", icon:"♻️", title:"Recycle Ranger", desc:"Reduce waste and build recycling solutions." },
+      { id:"balanceMaster", icon:"⚖️", title:"Balance Master", desc:"Finish a mission with all resources above 2." },
+      { id:"quizWhiz", icon:"🧠", title:"Quiz Whiz", desc:"Score 3/3 on any mission quiz." },
+    ];
+
+    // Missions: decisions + quiz
+    const MISSIONS = [
+      {
+        id:"riverCleanup",
+        zone:"river",
+        zoneName:"Polluted River Zone",
+        title:"Polluted River Rescue",
+        short:"Clean the river and stop pollution.",
+        objectives:[
+          "Reduce water pollution safely.",
+          "Choose a long‑term cleanup solution.",
+          "Keep energy use reasonable."
+        ],
+        steps:[
+          {
+            title:"A factory spill reaches the river!",
+            text:"The water turns dark and fish are struggling. What do you do first?",
+            hint:"Containment + cleanup is safer than doing nothing or just “diluting” the pollution.",
+            choices:[
+              { label:"Deploy floating barriers and clean‑up teams", impact:"+ Eco Health, − Energy", delta:{eco:+10, energy:-2, waste:+1}, note:"Contain spill quickly." },
+              { label:"Flush the spill downstream with extra water", impact:"− Eco Health, − Water", delta:{eco:-6, water:-2}, note:"Moves pollution, doesn’t solve it." },
+              { label:"Wait for nature to fix it over time", impact:"− Eco Health", delta:{eco:-10}, note:"Too slow for wildlife." },
+            ]
+          },
+          {
+            title:"Now prevent future pollution.",
+            text:"You can invest in one upgrade this week. Which plan is best?",
+            hint:"Filtering and prevention usually beats repeated emergency cleanups.",
+            choices:[
+              { label:"Build a filtration station at the river edge", impact:"+ Eco Health, − Energy, + Waste", delta:{eco:+12, energy:-2, waste:+1}, note:"Filters pollutants." },
+              { label:"Increase road traffic to “boost the economy”", impact:"− Eco Health, + Waste", delta:{eco:-8, waste:+2}, note:"More emissions and trash." },
+              { label:"Plant riverbank trees and protect wetlands", impact:"+ Eco Health, − Seeds", delta:{eco:+9, seeds:-2}, note:"Natural buffer." },
+            ]
+          },
+          {
+            title:"Community challenge: trash in the water.",
+            text:"People throw litter near the river. Choose an action that lasts.",
+            hint:"Pair education with systems people can use.",
+            choices:[
+              { label:"Set up bins + a recycling pickup schedule", impact:"+ Eco Health, − Energy, − Waste", delta:{eco:+10, energy:-1, waste:-2}, note:"Easy to do the right thing." },
+              { label:"Put up a single “No Littering” sign", impact:"+ small Eco Health", delta:{eco:+2}, note:"Helpful but limited." },
+              { label:"Ignore it because it’s “not your job”", impact:"− Eco Health, + Waste", delta:{eco:-7, waste:+2}, note:"Trash builds up." },
+            ]
+          }
+        ],
+        quiz:[
+          { q:"Which choice best supports pollution control over time?", a:0, options:["Prevention and filtration systems","Doing nothing and waiting","Moving pollution downstream"] },
+          { q:"Why is “diluting” pollution a weak solution?", a:1, options:["It always costs seeds","It spreads harm instead of removing it","It increases renewable energy"] },
+          { q:"A good river solution often includes…", a:2, options:["Only punishment","Only emergency response","Both education and infrastructure"] },
+        ],
+        unlocks: { city: true },
+        badgeHint: "River Guardian"
+      },
+      {
+        id:"energyShift",
+        zone:"city",
+        zoneName:"Urban Eco‑District",
+        title:"Power Shift: Renewable Energy",
+        short:"Switch the city to clean power.",
+        objectives:[
+          "Adopt renewable energy sources.",
+          "Reduce air pollution from power generation.",
+          "Balance energy supply and eco impact."
+        ],
+        steps:[
+          {
+            title:"Your city needs more electricity.",
+            text:"Which energy project should you build first?",
+            hint:"Renewable energy reduces pollution over time.",
+            choices:[
+              { label:"Build a solar farm + battery storage", impact:"+ Eco Health, − Energy", delta:{eco:+12, energy:-2}, note:"Clean and reliable." },
+              { label:"Expand a coal power plant", impact:"− Eco Health, + Energy, + Waste", delta:{eco:-10, energy:+2, waste:+2}, note:"Cheap now, costly later." },
+              { label:"Install wind turbines near the coast", impact:"+ Eco Health, − Energy", delta:{eco:+10, energy:-1}, note:"Clean power." },
+            ]
+          },
+          {
+            title:"Peak demand hits at night.",
+            text:"How do you keep lights on without extra pollution?",
+            hint:"Efficiency and storage can cover peaks.",
+            choices:[
+              { label:"Use stored renewable energy (batteries)", impact:"+ Eco Health, − Energy", delta:{eco:+8, energy:-1}, note:"Cleaner peak power." },
+              { label:"Turn on diesel generators", impact:"− Eco Health, + Energy, + Waste", delta:{eco:-8, energy:+1, waste:+1}, note:"More emissions." },
+              { label:"Launch an energy‑saving campaign", impact:"+ Eco Health", delta:{eco:+5}, note:"Reduce demand." },
+            ]
+          },
+          {
+            title:"A new neighborhood is being built.",
+            text:"Pick a policy for sustainable growth.",
+            hint:"Green spaces + clean energy + smart waste works together.",
+            choices:[
+              { label:"Require rooftop solar + shade trees", impact:"+ Eco Health, − Seeds", delta:{eco:+11, seeds:-2}, note:"Cooler, cleaner homes." },
+              { label:"Build more parking lots, remove trees", impact:"− Eco Health, + Waste", delta:{eco:-9, waste:+2}, note:"Hotter city, more runoff." },
+              { label:"Add parks and safe walking paths", impact:"+ Eco Health, − Seeds", delta:{eco:+8, seeds:-1}, note:"Healthier community." },
+            ]
+          }
+        ],
+        quiz:[
+          { q:"Renewable energy is helpful because it…", a:0, options:["reduces pollution over time","creates unlimited waste","always costs water"] },
+          { q:"A good way to handle peak demand is…", a:2, options:["more coal","more diesel","efficiency + storage"] },
+          { q:"Green spaces in cities can…", a:1, options:["increase air pollution","improve wellbeing and cooling","stop all storms"] },
+        ],
+        unlocks: { forest: true },
+        badgeHint: "Solar Star"
+      },
+      {
+        id:"wasteWise",
+        zone:"forest",
+        zoneName:"Forest & Community Edge",
+        title:"Waste Wise: Reduce, Reuse, Recycle",
+        short:"Fix overflowing waste and protect nature.",
+        objectives:[
+          "Reduce waste going to landfills.",
+          "Build eco‑friendly waste systems.",
+          "Protect forests and wildlife."
+        ],
+        steps:[
+          {
+            title:"Trash is piling up near the forest.",
+            text:"What’s the best first step to reduce long‑term damage?",
+            hint:"Systems beat one‑time cleanups.",
+            choices:[
+              { label:"Build a recycling center and collection routes", impact:"+ Eco Health, − Energy, − Waste", delta:{eco:+12, energy:-2, waste:-2}, note:"Less landfill." },
+              { label:"Burn the waste to make it disappear", impact:"− Eco Health, − Waste", delta:{eco:-12, waste:-2}, note:"Air pollution harms health." },
+              { label:"Move the landfill deeper into the forest", impact:"− Eco Health, + Waste", delta:{eco:-10, waste:+1}, note:"Harms habitat." },
+            ]
+          },
+          {
+            title:"Food waste from markets is high.",
+            text:"Choose a plan that supports sustainability.",
+            hint:"Composting returns nutrients to soil.",
+            choices:[
+              { label:"Start community composting", impact:"+ Eco Health, − Waste", delta:{eco:+9, waste:-2}, note:"Healthy soil." },
+              { label:"Throw it all in the river", impact:"− Eco Health", delta:{eco:-14}, note:"Water pollution." },
+              { label:"Ban all markets", impact:"− Eco Health", delta:{eco:-5}, note:"Unfair and impractical." },
+            ]
+          },
+          {
+            title:"Deforestation risk increases.",
+            text:"Which action helps trees recover and keeps balance?",
+            hint:"Planting + protection works better together.",
+            choices:[
+              { label:"Plant trees and protect a conservation zone", impact:"+ Eco Health, − Seeds", delta:{eco:+12, seeds:-3}, note:"Habitat returns." },
+              { label:"Cut more trees for quick money", impact:"− Eco Health", delta:{eco:-12}, note:"Short‑term gain." },
+              { label:"Do nothing and hope it stops", impact:"− Eco Health", delta:{eco:-8}, note:"Needs action." },
+            ]
+          }
+        ],
+        quiz:[
+          { q:"Which option best supports waste management?", a:1, options:["burning everything","recycling + collection","hiding trash"] },
+          { q:"Composting helps because it…", a:0, options:["returns nutrients to soil","creates more plastic","uses fossil fuel only"] },
+          { q:"Deforestation can be reduced by…", a:2, options:["more roads","more parking lots","planting and protection"] },
+        ],
+        unlocks: { },
+        badgeHint: "Recycle Ranger / Tree Hero"
+      }
+    ];
+
+    // -----------------------
+    // Persistence
+    // -----------------------
+    const STORAGE_KEY = "ecoplanet_state_v1";
+    const loadState = () => {
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(!raw) return DEFAULT_STATE();
+        const parsed = JSON.parse(raw);
+        // simple migration hook
+        if(!parsed || typeof parsed !== "object" || parsed.version !== 1) return DEFAULT_STATE();
+        return parsed;
+      }catch(e){
+        return DEFAULT_STATE();
+      }
+    };
+    const saveState = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+
+    let state = loadState();
+
+    // -----------------------
+    // Audio (simple "nature" ambience)
+    // -----------------------
+    let audioCtx = null;
+    let ambienceTimer = null;
+
+    function ensureAudio(){
+      if(audioCtx) return;
+      try{
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }catch(e){ /* ignore */ }
+    }
+
+    function playClick(){
+      ensureAudio();
+      if(!audioCtx) return;
+      const vol = (state.settings.sfx ?? 0) / 100;
+      if(vol <= 0.01) return;
+
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = "triangle";
+      o.frequency.value = 520 + Math.random()*80;
+      g.gain.value = 0.0001;
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start();
+      g.gain.exponentialRampToValueAtTime(0.12*vol, audioCtx.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.12);
+      o.stop(audioCtx.currentTime + 0.14);
+    }
+
+    function startAmbience(){
+      ensureAudio();
+      if(!audioCtx) return;
+
+      const vol = (state.settings.music ?? 0) / 100;
+      if(vol <= 0.01) return;
+
+      if(ambienceTimer) return;
+
+      // Bird chirps: short sine bursts with random spacing
+      ambienceTimer = setInterval(() => {
+        const v = (state.settings.music ?? 0) / 100;
+        if(!audioCtx || v <= 0.01) return;
+
+        if(Math.random() < 0.55){
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.type = "sine";
+          o.frequency.value = 900 + Math.random()*600;
+          g.gain.value = 0.0001;
+          o.connect(g); g.connect(audioCtx.destination);
+          o.start();
+          g.gain.exponentialRampToValueAtTime(0.06*v, audioCtx.currentTime + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15);
+          o.stop(audioCtx.currentTime + 0.17);
+        }
+      }, 850);
+    }
+
+    function stopAmbience(){
+      if(ambienceTimer){ clearInterval(ambienceTimer); ambienceTimer = null; }
+    }
+
+    // -----------------------
+    // UI helpers
+    // -----------------------
+    const SCREENS = ["start","menu","options","achievements","tutorial","map","mission","play","feedback","rewards","exit"];
+    function show(screen){
+      SCREENS.forEach(s => $("#screen-"+s).classList.toggle("hidden", s !== screen));
+      // topbar hidden on start + exit for splash feel
+      $("#topbar").classList.toggle("hidden", screen === "start" || screen === "exit");
+      state.lastScreen = screen;
+      saveState();
+      updateHUD();
+      window.scrollTo({top:0, behavior:"instant"});
+    }
+
+    function toast(msg){
+      const t = $("#toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2400);
+    }
+
+    function clamp(n, lo, hi){ return Math.max(lo, Math.min(hi, n)); }
+
+    function applySettings(){
+      document.documentElement.style.setProperty("--fontScale", String(state.settings.fontScale ?? 1));
+      applyLanguage(state.settings.lang ?? "en");
+
+      // stop/restart ambience depending on volume
+      if((state.settings.music ?? 0) / 100 <= 0.01){
+        stopAmbience();
+      }else{
+        // start only after user interaction
+      }
+    }
+
+    function applyLanguage(lang){
+      const dict = I18N[lang] || I18N.en;
+      document.documentElement.lang = lang;
+
+      $("#ui-tag").textContent = dict.tag;
+
+      $("#start-subtitle").textContent = dict.startSubtitle;
+      $("#start-terra").textContent = dict.startTerra;
+      $("#start-hint").textContent = dict.startHint;
+      $("#start-btn-label").textContent = dict.startBtn;
+      $("#start-options-label").textContent = dict.startOptions;
+
+      $("#quick-status-title").textContent = dict.quickStatusTitle;
+      $("#quick-status-sub").textContent = dict.quickStatusSub;
+
+      $("#menu-title").textContent = dict.mainMenu;
+      $("#menu-sub").textContent = dict.menuSub;
+      $("#menu-play").textContent = dict.playGame;
+      $("#menu-options").textContent = dict.options;
+      $("#menu-achievements").textContent = dict.achievements;
+      $("#menu-exit").textContent = dict.exit;
+
+      $("#menu-story-title").textContent = dict.storyTitle;
+      $("#menu-story").textContent = dict.storyBody;
+      $("#menu-progress-title").textContent = dict.progressTitle;
+      $("#menu-rules").textContent = dict.rules;
+      $("#menu-terra").textContent = dict.menuTerra;
+
+      $("#opt-title").textContent = dict.optTitle;
+      $("#opt-sub").textContent = dict.optSub;
+      $("#opt-audio-title").textContent = dict.audioTitle;
+      $("#opt-music-label").textContent = dict.music;
+      $("#opt-sfx-label").textContent = dict.sfx;
+      $("#opt-audio-note").textContent = dict.audioNote;
+      $("#opt-access-title").textContent = dict.accessTitle;
+      $("#opt-textsize").textContent = dict.textSize;
+      $("#opt-tutorial").textContent = dict.tutorial;
+      $("#opt-language").textContent = dict.language;
+      $("#opt-note").textContent = dict.note;
+      $("#opt-save").textContent = dict.save;
+      $("#opt-back").textContent = dict.back;
+      $("#opt-reset").textContent = dict.reset;
+      $("#about-title").textContent = dict.aboutTitle;
+      $("#about-body").textContent = dict.aboutBody;
+
+      $("#ach-title").textContent = dict.achTitle;
+      $("#ach-sub").textContent = dict.achSub;
+      $("#ach-tip-title").textContent = dict.howTitle;
+      $("#ach-tip").textContent = dict.howBody;
+      $("#ach-terra").textContent = dict.achTerra;
+      $("#ach-back").textContent = dict.back;
+
+      $("#tut-title").textContent = dict.tutTitle;
+      $("#tut-sub").textContent = dict.tutSub;
+      $("#tut-next").textContent = dict.tutNext;
+      $("#tut-skip").textContent = dict.tutSkip;
+
+      $("#avatar-title").textContent = dict.avatarTitle;
+      $("#avatar-sub").textContent = dict.avatarSub;
+      $("#avatar-name-label").textContent = dict.avatarName;
+      $("#avatar-style-label").textContent = dict.avatarStyle;
+      $("#avatar-color-label").textContent = dict.avatarColor;
+      $("#avatar-save").textContent = dict.avatarSave;
+
+      $("#spirits-title").textContent = dict.spiritsTitle;
+      $("#spirits-body").textContent = dict.spiritsBody;
+
+      $("#map-title").textContent = dict.mapTitle;
+      $("#map-sub").textContent = dict.mapSub;
+      $("#map-menu").textContent = dict.mapMenu;
+
+      $("#status-title").textContent = dict.cityStatus;
+      $("#status-body").textContent = dict.cityBody;
+
+      $("#mission-title").textContent = dict.missionTitle;
+      $("#mission-sub").textContent = dict.missionSub;
+      $("#mission-start").textContent = dict.missionStart;
+      $("#mission-back").textContent = dict.missionBack;
+
+      $("#hint-label").textContent = dict.hint;
+
+      $("#play-title").textContent = dict.playTitle;
+      $("#play-sub").textContent = dict.playSub;
+      $("#play-abort").textContent = dict.playAbort;
+
+      $("#fb-title").textContent = dict.fbTitle;
+      $("#fb-sub").textContent = dict.fbSub;
+      $("#report-title").textContent = dict.reportTitle;
+      $("#quiz-submit").textContent = dict.quizSubmit;
+      $("#fb-remember-title").textContent = dict.rememberTitle;
+      $("#fb-remember").textContent = dict.rememberBody;
+
+      $("#rw-title").textContent = dict.rwTitle;
+      $("#rw-sub").textContent = dict.rwSub;
+      $("#rw-earned-title").textContent = dict.rwEarnedTitle;
+      $("#rw-next-title").textContent = dict.rwNextTitle;
+      $("#rw-to-map").textContent = dict.rwToMap;
+      $("#rw-next-mission").textContent = dict.rwNextMission;
+
+      $("#exit-title").textContent = dict.exitTitle;
+      $("#exit-sub").textContent = dict.exitSub;
+      $("#exit-terra").textContent = dict.exitTerra;
+      $("#exit-home").textContent = dict.exitHome;
+
+      $("#hud-health-label").textContent = dict.ecoHealth;
+      $("#hud-points-label").textContent = dict.points;
+    }
+
+    function updateHUD(){
+      $("#hud-player").textContent = state.player?.name || "Planner";
+      $("#hud-points").textContent = String(state.points);
+      $("#hud-health").textContent = String(state.ecoHealth);
+
+      // menu resource cards
+      $("#hud-water").textContent = String(state.resources.water);
+      $("#hud-energy").textContent = String(state.resources.energy);
+      $("#hud-seeds").textContent = String(state.resources.seeds);
+      $("#hud-waste").textContent = String(state.resources.waste);
+
+      // start quick status
+      $("#quick-health-text").textContent = `Eco Health: ${state.ecoHealth}/100`;
+      $("#quick-health-bar").style.width = clamp(state.ecoHealth,0,100) + "%";
+
+      // map stats
+      $("#map-water").textContent = String(state.resources.water);
+      $("#map-energy").textContent = String(state.resources.energy);
+      $("#map-seeds").textContent = String(state.resources.seeds);
+      $("#map-waste").textContent = String(state.resources.waste);
+      $("#map-health-text").textContent = `${state.ecoHealth}/100`;
+      $("#map-health-bar").style.width = clamp(state.ecoHealth,0,100) + "%";
+
+      // gameplay stats (if visible)
+      $("#play-water").textContent = String(state.resources.water);
+      $("#play-energy").textContent = String(state.resources.energy);
+      $("#play-seeds").textContent = String(state.resources.seeds);
+      $("#play-waste").textContent = String(state.resources.waste);
+      $("#play-health").textContent = String(state.ecoHealth);
+    }
+
+    // -----------------------
+    // Tutorial
+    // -----------------------
+    const tutorialLines = [
+      { line:"Welcome to EcoPlanet! You’ll restore a damaged planet by choosing sustainable solutions.", hint:"Your goal is balance: protect the environment while managing resources." },
+      { line:"You manage resources like water 💧, energy ⚡, and seeds 🌰. They’re limited, so spend wisely.", hint:"If a resource hits 0, future choices get harder." },
+      { line:"Missions happen in zones (river, city, forest). Completing missions unlocks new zones.", hint:"Start in the polluted zone and grow step-by-step." },
+      { line:"After each mission, you’ll see a report and take a short quiz to reinforce learning.", hint:"Quizzes unlock bonus rewards — and help you remember the ideas." },
+    ];
+    let tutIndex = 0;
+
+    function renderTutorial(){
+      const t = tutorialLines[tutIndex];
+      $("#tut-line").textContent = t.line;
+      $("#tut-hint").textContent = t.hint;
+    }
+
+    // -----------------------
+    // Achievements
+    // -----------------------
+    function renderBadges(){
+      const grid = $("#badge-grid");
+      grid.innerHTML = "";
+      BADGES.forEach(b => {
+        const unlocked = !!state.badges[b.id];
+        const el = document.createElement("div");
+        el.className = "badge" + (unlocked ? "" : " locked");
+        el.innerHTML = `
+          <div class="medal" aria-hidden="true">${b.icon}</div>
+          <div>
+            <h4>${b.title}</h4>
+            <p>${b.desc}</p>
+            <div class="small" style="margin-top:6px;">${unlocked ? "✅ Unlocked" : "🔒 Locked"}</div>
+          </div>
+        `;
+        grid.appendChild(el);
+      });
+    }
+
+    // -----------------------
+    // Map + Missions
+    // -----------------------
+    const ZONES = [
+      { id:"river", name:"Polluted Rivers", icon:"💧", desc:"Stop spills and clean water.", tag:"Beginner", lockKey:"river" },
+      { id:"city", name:"Urban Areas", icon:"🏙️", desc:"Build a clean-energy city.", tag:"Intermediate", lockKey:"city" },
+      { id:"forest", name:"Forests", icon:"🌳", desc:"Protect habitats and reduce waste.", tag:"Advanced", lockKey:"forest" },
+    ];
+
+    let selectedZone = null;
+    let selectedMission = null;
+
+    function zoneHealthLabel(){
+      if(state.ecoHealth >= 75) return {text:"Thriving", cls:"good"};
+      if(state.ecoHealth >= 45) return {text:"Recovering", cls:"warn"};
+      return {text:"At Risk", cls:"bad"};
+    }
+
+    function renderMap(){
+      const grid = $("#zoneGrid");
+      grid.innerHTML = "";
+      const zHealth = zoneHealthLabel();
+
+      ZONES.forEach(z => {
+        const unlocked = !!state.zonesUnlocked[z.lockKey];
+        const el = document.createElement("div");
+        el.className = "zone" + (unlocked ? "" : " locked");
+        el.tabIndex = unlocked ? 0 : -1;
+        el.setAttribute("role","button");
+        el.setAttribute("aria-label", unlocked ? `${z.name} zone` : `${z.name} locked`);
+        el.innerHTML = `
+          <div>
+            <h3>${z.icon} ${z.name}</h3>
+            <div class="small">${z.desc}</div>
+          </div>
+          <div class="badgeRow">
+            <span class="chip ${zHealth.cls}">🌿 ${zHealth.text}</span>
+            <span class="chip">🧩 ${z.tag}</span>
+            <span class="chip">${unlocked ? "🔓 Unlocked" : "🔒 Locked"}</span>
+          </div>
+        `;
+        if(unlocked){
+          el.addEventListener("click", () => { playClick(); openZone(z.id); });
+          el.addEventListener("keydown", (e) => { if(e.key==="Enter" || e.key===" "){ e.preventDefault(); playClick(); openZone(z.id); }});
+        }
+        grid.appendChild(el);
+      });
+    }
+
+    function openZone(zoneId){
+      selectedZone = zoneId;
+      // pick first undone mission in that zone, otherwise first
+      const missions = MISSIONS.filter(m => m.zone === zoneId);
+      const m = missions.find(mm => !state.missionsDone[mm.id]) || missions[0];
+      openMission(m.id);
+    }
+
+    function openMission(missionId){
+      selectedMission = missionId;
+      const m = MISSIONS.find(x => x.id === missionId);
+      if(!m) return;
+
+      const done = !!state.missionsDone[m.id];
+      const title = done ? `${m.title} (Replay)` : m.title;
+
+      $("#missionCard").innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <div>
+            <h3 style="margin:0;">${title}</h3>
+            <div class="small">Zone: ${m.zoneName}</div>
+          </div>
+          <div class="chip">${done ? "🔁 Replay" : "🆕 New"}</div>
+        </div>
+
+        <div class="small" style="margin-top:6px;">${m.short}</div>
+
+        <div style="margin-top:8px;font-weight:900;">Objectives</div>
+        <ul>
+          ${m.objectives.map(o => `<li>${o}</li>`).join("")}
+        </ul>
+
+        <div class="small" style="margin-top:8px;">
+          <strong>Heads-up:</strong> Choices affect Eco Health and resources.
+          Quiz at the end unlocks bonus points.
+        </div>
+      `;
+
+      show("mission");
+    }
+
+    // -----------------------
+    // Gameplay engine
+    // -----------------------
+    let stepIndex = 0;
+    let run = null;
+
+    function startMission(){
+      const m = MISSIONS.find(x => x.id === selectedMission);
+      if(!m) return;
+
+      run = {
+        missionId: m.id,
+        startEco: state.ecoHealth,
+        startPoints: state.points,
+        startResources: {...state.resources},
+        chosen: [],
+        plantedTrees: 0,
+        renewableChoices: 0,
+        recyclingChoices: 0,
+      };
+      stepIndex = 0;
+
+      $("#hintBox").classList.add("hidden");
+      $("#btn-hint").classList.toggle("hidden", !state.settings.tutorial);
+      renderStep();
+      show("play");
+    }
+
+    function renderStep(){
+      const m = MISSIONS.find(x => x.id === run.missionId);
+      const s = m.steps[stepIndex];
+
+      $("#scenario-step").textContent = `Step ${stepIndex+1} of ${m.steps.length}`;
+      $("#scenario-zone").textContent = `Zone: ${m.zoneName}`;
+      $("#scenario-title").textContent = s.title;
+      $("#scenario-text").textContent = s.text;
+
+      // Terra hint
+      $("#hintText").textContent = s.hint;
+      $("#hintBox").classList.toggle("hidden", true);
+
+      // choices
+      const cWrap = $("#choices");
+      cWrap.innerHTML = "";
+      s.choices.forEach((c, idx) => {
+        const el = document.createElement("div");
+        el.className = "choice";
+        el.setAttribute("role","button");
+        el.tabIndex = 0;
+        el.innerHTML = `
+          <h4>${String.fromCharCode(65+idx)}. ${c.label}</h4>
+          <div class="impact">
+            ${impactChips(c.delta).join("")}
+          </div>
+          <div class="small" style="margin-top:6px;">${c.note}</div>
+        `;
+        const pick = () => chooseOption(idx);
+        el.addEventListener("click", () => { playClick(); pick(); });
+        el.addEventListener("keydown", (e) => { if(e.key==="Enter" || e.key===" "){ e.preventDefault(); playClick(); pick(); }});
+        cWrap.appendChild(el);
+      });
+
+      updateHUD();
+    }
+
+    function impactChips(delta){
+      const parts = [];
+      const add = (emoji, k, v) => {
+        if(v === 0 || v === undefined) return;
+        const sign = v > 0 ? "+" : "−";
+        const cls = (k === "eco") ? (v>0 ? "good" : "bad") : "warn";
+        const labelMap = { eco:"Eco Health", water:"Water", energy:"Energy", seeds:"Seeds", waste:"Waste", points:"Points" };
+        parts.push(`<span class="chip ${cls}">${emoji} ${sign}${Math.abs(v)} ${labelMap[k]}</span>`);
+      };
+      add("🌍","eco",delta.eco||0);
+      add("💧","water",delta.water||0);
+      add("⚡","energy",delta.energy||0);
+      add("🌰","seeds",delta.seeds||0);
+      add("🧺","waste",delta.waste||0);
+      add("⭐","points",delta.points||0);
+      return parts;
+    }
+
+    function chooseOption(choiceIndex){
+      const m = MISSIONS.find(x => x.id === run.missionId);
+      const s = m.steps[stepIndex];
+      const c = s.choices[choiceIndex];
+
+      // Apply resource deltas
+      const d = c.delta || {};
+      const res = state.resources;
+
+      // do not allow negative resources; if choice would go negative, soften outcome
+      const needed = ["water","energy","seeds"].some(k => (res[k] + (d[k]||0)) < 0);
+      let softened = false;
+
+      if(needed){
+        softened = true;
+        toast("Not enough resources — Terra helps you find a smaller version of that plan.");
+      }
+
+      // Apply with clamp
+      const apply = (k, delta) => {
+        if(delta === undefined) return;
+        if(softened && delta < 0) delta = Math.ceil(delta/2); // pay half cost
+        res[k] = clamp(res[k] + delta, 0, 99);
+      };
+
+      apply("water", d.water||0);
+      apply("energy", d.energy||0);
+      apply("seeds", d.seeds||0);
+      apply("waste", d.waste||0);
+
+      // Eco health change
+      let ecoDelta = d.eco || 0;
+      if(softened && ecoDelta > 0) ecoDelta = Math.floor(ecoDelta * 0.7);
+      state.ecoHealth = clamp(state.ecoHealth + ecoDelta, 0, 100);
+
+      // points (simple: ecoDelta positive gives points)
+      const basePoints = Math.max(0, ecoDelta) * 6 + (softened ? 2 : 0);
+      state.points += basePoints;
+
+      // tracking for achievements
+      if(c.label.toLowerCase().includes("plant") || c.label.toLowerCase().includes("trees")){
+        run.plantedTrees += 4;
+      }
+      if(c.label.toLowerCase().includes("solar") || c.label.toLowerCase().includes("wind") || c.label.toLowerCase().includes("stored renewable")){
+        run.renewableChoices += 1;
+      }
+      if(c.label.toLowerCase().includes("recycling") || c.label.toLowerCase().includes("compost")){
+        run.recyclingChoices += 1;
+      }
+
+      run.chosen.push({ step: stepIndex, choice: choiceIndex, delta: d, ecoApplied: ecoDelta, pointsAdded: basePoints });
+
+      saveState();
+      updateHUD();
+
+      // Next step or finish
+      if(stepIndex < m.steps.length - 1){
+        stepIndex += 1;
+        renderStep();
+      }else{
+        finishMission();
+      }
+    }
+
+    // -----------------------
+    // Feedback, Quiz, Rewards
+    // -----------------------
+    let pendingRewards = null;
+
+    function finishMission(){
+      const m = MISSIONS.find(x => x.id === run.missionId);
+
+      const ecoDelta = state.ecoHealth - run.startEco;
+      const pointsDelta = state.points - run.startPoints;
+
+      // unlock zones
+      if(m.unlocks){
+        Object.entries(m.unlocks).forEach(([k,v]) => {
+          if(v) state.zonesUnlocked[k] = true;
+        });
+      }
+
+      // record completion
+      state.missionsDone[m.id] = true;
+
+      // Basic performance report
+      const good = ecoDelta >= 8;
+      const ok = ecoDelta >= 0;
+      const ecoWord = good ? "strong improvement" : (ok ? "small improvement" : "setback");
+
+      const report = [
+        `Mission: ${m.title}`,
+        `Eco Health changed by ${ecoDelta >= 0 ? "+" : ""}${ecoDelta} (${ecoWord}).`,
+        `You earned ${pointsDelta} points from your decisions.`,
+        `Resources left: water ${state.resources.water}, energy ${state.resources.energy}, seeds ${state.resources.seeds}, waste ${state.resources.waste}.`,
+        `Next: answer the quiz to lock in rewards and unlock extras.`,
+      ].join(" ");
+
+      $("#report-body").textContent = report;
+      $("#fb-points").textContent = String(pointsDelta);
+      $("#fb-healthdelta").textContent = (ecoDelta>=0?"+":"") + String(ecoDelta);
+
+      // Terra feedback adapts based on performance
+      let terraLine;
+      if(ecoDelta >= 12){
+        terraLine = "That was excellent planning! You balanced resources and boosted the ecosystem. Let’s lock it in with the quiz.";
+      }else if(ecoDelta >= 0){
+        terraLine = "Nice start. You improved the planet, and you can do even better next time by choosing more long‑term solutions.";
+      }else{
+        terraLine = "Oof — that plan hurt the ecosystem. Don’t worry. The quiz will help you spot a better strategy for next time.";
+      }
+      $("#fb-terra").textContent = terraLine;
+
+      // Render quiz
+      renderQuiz(m);
+
+      pendingRewards = {
+        missionId: m.id,
+        ecoDelta,
+        pointsDelta,
+        quizScore: null,
+        bonusPoints: 0,
+        unlockedBadges: [],
+        unlockedCosmetic: null,
+      };
+
+      saveState();
+      show("feedback");
+    }
+
+    function renderQuiz(m){
+      const wrap = $("#quizBox");
+      wrap.innerHTML = `
+        <div style="font-weight:900;margin-bottom:6px;">Quick Quiz</div>
+        <div class="small">Answer 3 questions. This reinforces what you learned.</div>
+      `;
+
+      m.quiz.forEach((qq, i) => {
+        const qEl = document.createElement("div");
+        qEl.className = "q";
+        qEl.innerHTML = `
+          <h4>Q${i+1}. ${qq.q}</h4>
+          ${qq.options.map((opt, j) => `
+            <label>
+              <input type="radio" name="q${i}" value="${j}" />
+              <span>${opt}</span>
+            </label>
+          `).join("")}
+        `;
+        wrap.appendChild(qEl);
+      });
+    }
+
+    function submitQuiz(){
+      const m = MISSIONS.find(x => x.id === pendingRewards.missionId);
+      let correct = 0;
+
+      m.quiz.forEach((qq, i) => {
+        const picked = document.querySelector(`input[name="q${i}"]:checked`);
+        const val = picked ? Number(picked.value) : -1;
+        if(val === qq.a) correct += 1;
+      });
+
+      const score = correct;
+      pendingRewards.quizScore = score;
+
+      // bonus rules
+      let bonus = 0;
+      if(score === 3) bonus += 40;
+      if(score === 2) bonus += 20;
+      if(score <= 1) bonus += 5;
+
+      state.points += bonus;
+      pendingRewards.bonusPoints = bonus;
+
+      // achievements unlocking
+      unlockBadgesForRun(m, score);
+
+      // unlock a cosmetic (no gameplay effect)
+      const cosmetics = ["Cloudy Sky Theme ☁️", "River Lanterns 🏮", "Solar Rooftop Style 🏠☀️", "Forest Path Decor 🌿"];
+      pendingRewards.unlockedCosmetic = cosmetics[Math.floor(Math.random()*cosmetics.length)];
+
+      saveState();
+      toast(`Quiz score: ${score}/3  •  Bonus +${bonus} points`);
+      showRewards();
+    }
+
+    function unlockBadgesForRun(m, score){
+      const unlocked = [];
+
+      // Tree Hero (planting across missions)
+      state.badges._treeCount = (state.badges._treeCount || 0) + run.plantedTrees;
+      if((state.badges._treeCount || 0) >= 10 && !state.badges.treeHero){
+        state.badges.treeHero = true; unlocked.push("Tree Hero");
+      }
+
+      // River Guardian: river mission with ecoDelta positive and energy not drained below 2
+      if(m.id === "riverCleanup"){
+        if(pendingRewards.ecoDelta >= 8 && state.resources.energy >= 2 && !state.badges.riverGuardian){
+          state.badges.riverGuardian = true; unlocked.push("River Guardian");
+        }
+      }
+
+      // Solar Star: choose renewables in energy mission
+      if(m.id === "energyShift"){
+        if(run.renewableChoices >= 2 && !state.badges.solarStar){
+          state.badges.solarStar = true; unlocked.push("Solar Star");
+        }
+      }
+
+      // Recycle Ranger: recycling / compost choices
+      if(m.id === "wasteWise"){
+        if(run.recyclingChoices >= 2 && !state.badges.recycleRanger){
+          state.badges.recycleRanger = true; unlocked.push("Recycle Ranger");
+        }
+      }
+
+      // Balance Master: finish mission with all resources > 2
+      const r = state.resources;
+      if(r.water > 2 && r.energy > 2 && r.seeds > 2 && r.waste > 2 && !state.badges.balanceMaster){
+        state.badges.balanceMaster = true; unlocked.push("Balance Master");
+      }
+
+      // Quiz Whiz: 3/3 on any quiz
+      if(score === 3 && !state.badges.quizWhiz){
+        state.badges.quizWhiz = true; unlocked.push("Quiz Whiz");
+      }
+
+      pendingRewards.unlockedBadges = unlocked;
+    }
+
+    function showRewards(){
+      const m = MISSIONS.find(x => x.id === pendingRewards.missionId);
+
+      const unlockedZones = Object.entries(m.unlocks || {}).filter(([k,v]) => v).map(([k]) => k);
+      const zoneText = unlockedZones.length
+        ? `Unlocked zone: ${unlockedZones.map(z => z==="city" ? "Urban Areas" : z==="forest" ? "Forests" : z).join(", ")}.`
+        : `No new zones unlocked this time — replay to improve your Eco Health!`;
+
+      const badgesText = pendingRewards.unlockedBadges.length
+        ? `Badges: ${pendingRewards.unlockedBadges.join(", ")}.`
+        : "Badges: none this time (keep trying!).";
+
+      $("#rw-earned").textContent =
+        `+${pendingRewards.pointsDelta} points from decisions, +${pendingRewards.bonusPoints} quiz bonus. ${badgesText} ` +
+        `Cosmetic unlock: ${pendingRewards.unlockedCosmetic}`;
+
+      // Next suggestions (expandable flow)
+      const next = suggestNextMission(m.id);
+      $("#rw-next").textContent =
+        `${zoneText} Recommended next mission: ${next ? next.title : "Replay any mission"}.
+         You can also return to the Eco‑City Map.`;
+
+      saveState();
+      show("rewards");
+    }
+
+    function suggestNextMission(currentId){
+      // pick a mission not done, prioritizing newly unlocked zones
+      const remaining = MISSIONS.filter(mm => !state.missionsDone[mm.id]);
+      if(remaining.length === 0) return null;
+
+      // if city unlocked and not done
+      if(state.zonesUnlocked.city){
+        const cityM = remaining.find(r => r.zone === "city");
+        if(cityM) return cityM;
+      }
+      // if forest unlocked and not done
+      if(state.zonesUnlocked.forest){
+        const forestM = remaining.find(r => r.zone === "forest");
+        if(forestM) return forestM;
+      }
+      return remaining[0];
+    }
+
+    // -----------------------
+    // Wire up controls
+    // -----------------------
+    function hookButtons(){
+      const clickWrap = (fn) => (e) => { e.preventDefault(); playClick(); startAmbience(); fn(); };
+
+      $("#btn-start").addEventListener("click", clickWrap(() => show("menu")));
+      $("#btn-start-options").addEventListener("click", clickWrap(() => { syncOptionsUI(); show("options"); }));
+
+      $("#btn-play").addEventListener("click", clickWrap(() => {
+        if(state.settings.tutorial){
+          tutIndex = 0; renderTutorial(); show("tutorial");
+        }else{
+          renderMap(); show("map");
+        }
+      }));
+
+      $("#btn-options").addEventListener("click", clickWrap(() => { syncOptionsUI(); show("options"); }));
+      $("#btn-achievements").addEventListener("click", clickWrap(() => { renderBadges(); show("achievements"); }));
+      $("#btn-exit").addEventListener("click", clickWrap(() => show("exit")));
+
+      $("#btn-exit-home").addEventListener("click", clickWrap(() => show("start")));
+
+      $("#btn-ach-back").addEventListener("click", clickWrap(() => show("menu")));
+
+      $("#btn-opt-back").addEventListener("click", clickWrap(() => show("menu")));
+      $("#btn-opt-save").addEventListener("click", clickWrap(() => { saveOptionsFromUI(); toast("Saved!"); show("menu"); }));
+      $("#btn-opt-reset").addEventListener("click", clickWrap(() => {
+        if(confirm("Reset all progress?")){
+          state = DEFAULT_STATE();
+          saveState();
+          applySettings();
+          updateHUD();
+          toast("Progress reset.");
+          show("menu");
+        }
+      }));
+
+      $("#btn-tut-next").addEventListener("click", clickWrap(() => {
+        if(tutIndex < tutorialLines.length - 1){
+          tutIndex += 1;
+          renderTutorial();
+        }else{
+          renderMap();
+          show("map");
+        }
+      }));
+      $("#btn-tut-skip").addEventListener("click", clickWrap(() => { renderMap(); show("map"); }));
+
+      $("#btn-avatar-save").addEventListener("click", clickWrap(() => {
+        const name = ($("#avatar-name").value || "").trim().slice(0,18) || "Planner";
+        state.player.name = name;
+        state.player.style = $("#avatar-style").value;
+        state.player.color = $("#avatar-color").value;
+        saveState();
+        updateHUD();
+        toast("Avatar saved.");
+      }));
+
+      $("#btn-map-menu").addEventListener("click", clickWrap(() => show("menu")));
+
+      $("#btn-mission-back").addEventListener("click", clickWrap(() => { renderMap(); show("map"); }));
+      $("#btn-mission-start").addEventListener("click", clickWrap(() => startMission()));
+      $("#btn-play-abort").addEventListener("click", clickWrap(() => show("mission")));
+
+      $("#btn-hint").addEventListener("click", clickWrap(() => {
+        if(!state.settings.tutorial) return;
+        $("#hintBox").classList.toggle("hidden");
+      }));
+
+      $("#btn-quiz-submit").addEventListener("click", clickWrap(() => submitQuiz()));
+
+      $("#btn-rw-map").addEventListener("click", clickWrap(() => { renderMap(); show("map"); }));
+      $("#btn-rw-next").addEventListener("click", clickWrap(() => {
+        const next = suggestNextMission(pendingRewards.missionId);
+        if(next){
+          openMission(next.id);
+        }else{
+          renderMap(); show("map");
+        }
+      }));
+    }
+
+    function syncOptionsUI(){
+      $("#opt-music").value = String(state.settings.music ?? 30);
+      $("#opt-sfx").value = String(state.settings.sfx ?? 55);
+      $("#opt-text").value = String(state.settings.fontScale ?? 1);
+      $("#opt-tutorial-toggle").value = state.settings.tutorial ? "on" : "off";
+      $("#opt-lang").value = String(state.settings.lang ?? "en");
+      $("#avatar-name").value = state.player?.name || "Planner";
+      $("#avatar-style").value = state.player?.style || "cap";
+      $("#avatar-color").value = state.player?.color || "aqua";
+    }
+
+    function saveOptionsFromUI(){
+      state.settings.music = Number($("#opt-music").value);
+      state.settings.sfx = Number($("#opt-sfx").value);
+      state.settings.fontScale = Number($("#opt-text").value);
+      state.settings.tutorial = $("#opt-tutorial-toggle").value === "on";
+      state.settings.lang = $("#opt-lang").value;
+      saveState();
+      applySettings();
+      // volume might change ambience
+      if((state.settings.music ?? 0)/100 <= 0.01) stopAmbience();
+    }
+
+    // -----------------------
+    // Particles
+    // -----------------------
+    function spawnBubbles(){
+      const sky = $("#sky");
+      const count = 22;
+      sky.innerHTML = "";
+      for(let i=0;i<count;i++){
+        const b = document.createElement("div");
+        b.className = "bubble";
+        b.style.left = Math.random()*100 + "vw";
+        b.style.animationDuration = (6 + Math.random()*8) + "s";
+        b.style.animationDelay = (-Math.random()*12) + "s";
+        const s = 6 + Math.random()*12;
+        b.style.width = s + "px";
+        b.style.height = s + "px";
+        sky.appendChild(b);
+      }
+    }
+
+    // -----------------------
+    // Boot
+    // -----------------------
+    function boot(){
+      spawnBubbles();
+      applySettings();
+      hookButtons();
+      renderBadges();
+      renderTutorial();
+      renderMap();
+      updateHUD();
+
+      // Restore last screen only if it makes sense
+      const last = state.lastScreen || "start";
+      show(last === "start" ? "start" : "start"); // always start on start screen for a predictable demo
+    }
+
+    boot();
+  </script>
+</body>
+</html>
